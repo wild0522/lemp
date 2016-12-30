@@ -1,2 +1,2 @@
 # lemp
-ubuntu, nginx, mySql, php7 Fat container
+A fat docker container. ubuntu, nginx, mySql, php7

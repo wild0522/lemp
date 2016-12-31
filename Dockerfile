@@ -17,12 +17,31 @@ RUN apt-get update
 
 RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install nano;DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nginx
+#install wget, nano editor, nginx
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes wget && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nano && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nginx
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes software-properties-common;LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:ondrej/php;DEBIAN_FRONTEND=noninteractive apt-get update;DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes php7.0 php7.0-fpm php7.0-mysql php7.0-curl php7.0-gd php7.0-json php7.0-mcrypt php7.0-opcache php7.0-xml php7.0-mbstring;
+#install php7
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes software-properties-common && \
+LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/php && \
+DEBIAN_FRONTEND=noninteractive apt-get update && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes php7.0 php7.0-fpm php7.0-mysql php7.0-curl php7.0-gd php7.0-json php7.0-mcrypt php7.0-opcache php7.0-xml php7.0-mbstring;
 
-VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html/","/var/www/"]
+#install mysql 5.7
+RUN \
+LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/mysql-5.7 && \
+apt-get update && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mysql-server;
 
-ENTRYPOINT service nginx start && service php7.0-fpm start && /bin/bash
+#mount folder: nginx config, nginx html, www, log
+VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html","/var/www"]
+
+#auto start nginx, php7
+ENTRYPOINT \
+service nginx start && \
+service php7.0-fpm start && \
+service mysql restart && \
+/bin/bash
 
 EXPOSE 80

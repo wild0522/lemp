@@ -17,9 +17,8 @@ RUN apt-get update
 
 RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d
 
-#install wget, nano editor, nginx
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes wget && \
-DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nano && \
+#install wget, nano editor, git, nginx
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes wget curl nano git && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nginx
 
 #install php7
@@ -34,6 +33,10 @@ LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/m
 apt-get update && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mysql-server;
 
+#install nodejs 7.x, npm 3
+RUN curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash - && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nodejs
+
 #mount folder: nginx config, nginx html, www, log
 VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html","/var/www"]
 
@@ -44,4 +47,4 @@ service php7.0-fpm start && \
 service mysql restart && \
 /bin/bash
 
-EXPOSE 80
+EXPOSE 80 8000

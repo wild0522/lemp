@@ -11,23 +11,23 @@ ENV LC_ALL=en_US.UTF-8
 ENV LC_CTYPE=UTF-8
 ENV TERM xterm
 
-ENV MYSQL_ROOT_PASSWORD '123456'
+#ENV MYSQL_ROOT_PASSWORD '123456'
 
 RUN apt-get update
 
 #RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d
 
-#install wget, nano editor, git, nginx
+#install wget, nano editor, git 1.9.1, nginx 1.4.6
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes wget curl nano git && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nginx
 
-#install php7
+#install php7.0
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes software-properties-common && \
 LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/php && \
 DEBIAN_FRONTEND=noninteractive apt-get update && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes php7.0 php7.0-fpm php7.0-mysql php7.0-curl php7.0-gd php7.0-json php7.0-mcrypt php7.0-opcache php7.0-xml php7.0-mbstring;
 
-#install mysql 5.7
+#install mysql 5.7.14
 RUN \
 LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/mysql-5.7 && \
 apt-get update && \
@@ -40,8 +40,7 @@ RUN service mysql restart && mysql -u root -e "CREATE USER 'wild'@'%' IDENTIFIED
 mysql -u root -e "GRANT ALL ON mysql.* TO 'wild'@'%'" && \
 mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'";
 
-
-#install nodejs 7.x, npm 3
+#install nodejs 7.4.0, npm 4.0.5
 RUN curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash - && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nodejs
 
@@ -58,7 +57,7 @@ echo 'export LANGUAGE="en_US.UTF-8"' >> /etc/bash.bashrc && \
 echo 'export LC_ALL="en_US.UTF-8"' >> /etc/bash.bashrc && \ 
 echo 'export LANG="en_US.UTF-8"' >> /etc/bash.bashrc
 
-#install mongoDB
+#install mongoDB 3.4.1
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
 echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
 apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mongodb-org && \

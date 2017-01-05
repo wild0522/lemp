@@ -4,18 +4,18 @@ MAINTAINER wild0522 <wild0522@gmail.com>
 USER root
 
 RUN locale-gen en_US.UTF-8
-ENV LANGUAGE=en_US.UTF-8;
-ENV LC_ALL=en_US.UTF-8;
-ENV LC_CTYPE=UTF-8;
-ENV LANG=en_US.UTF-8;
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LC_CTYPE=UTF-8
 ENV TERM xterm
 
-#ADD nginx.conf /etc/nginx/
-#COPY sites/*.conf /etc/nginx/sites-enabled/
+ENV MYSQL_ROOT_PASSWORD '123456'
 
 RUN apt-get update
 
-RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d
+#RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d
 
 #install wget, nano editor, git, nginx
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes wget curl nano git && \
@@ -31,7 +31,15 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes php7.0 php7.0-fpm 
 RUN \
 LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:ondrej/mysql-5.7 && \
 apt-get update && \
+#echo mysql-community-server	mysql-community-server/root-pass password $MYSQL_ROOT_PASSWORD | debconf-set-selections && \
+#echo mysql-community-server	mysql-community-server/re-root-pass	password $MYSQL_ROOT_PASSWORD | debconf-set-selections && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mysql-server;
+
+#run and set mysql user
+RUN service mysql restart && mysql -u root -e "CREATE USER 'wild'@'%' IDENTIFIED BY '123456'" && \
+mysql -u root -e "GRANT ALL ON mysql.* TO 'wild'@'%'" && \
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'";
+
 
 #install nodejs 7.x, npm 3
 RUN curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash - && \
@@ -40,11 +48,31 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nodejs
 #mount folder: nginx config, nginx html, www, log
 VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html","/var/www"]
 
-#auto start nginx, php7
+#install ssh
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes openssh-server && \
+mkdir /var/run/sshd && \
+echo 'root:root' |chpasswd && \ 
+sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \ 
+sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config && \ 
+echo 'export LANGUAGE="en_US.UTF-8"' >> /etc/bash.bashrc && \ 
+echo 'export LC_ALL="en_US.UTF-8"' >> /etc/bash.bashrc && \ 
+echo 'export LANG="en_US.UTF-8"' >> /etc/bash.bashrc
+
+#install mongoDB
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
+echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
+apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mongodb-org && \
+mkdir -p /data/db
+
+#auto start nginx, php7, sshd
 ENTRYPOINT \
 service nginx start && \
 service php7.0-fpm start && \
 service mysql restart && \
+mongod --fork --logpath /var/log/mongodb.log && \
+/usr/sbin/sshd -D && \
 /bin/bash
 
-EXPOSE 80 8000
+RUN export LC_ALL="en_US.UTF-8"
+
+EXPOSE 80 8000 22 3306 27017 28017

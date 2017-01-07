@@ -44,12 +44,9 @@ mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'";
 RUN curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash - && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes nodejs
 
-#mount folder: nginx config, nginx html, www, log
-VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html","/var/www"]
-
 #install ssh
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes openssh-server && \
-mkdir /var/run/sshd && \
+mkdir -p /var/run/sshd && \
 echo 'root:root' |chpasswd && \ 
 sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \ 
 sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config && \ 
@@ -60,18 +57,23 @@ echo 'export LANG="en_US.UTF-8"' >> /etc/bash.bashrc
 #install mongoDB 3.4.1
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
 echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
-apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mongodb-org && \
-mkdir -p /data/db
+apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mongodb-org
+#RUN mkdir -p /data/db
 
-#auto start nginx, php7, sshd
+#menual add mongo.sevice & init.d (stop not working)
+RUN wget https://raw.githubusercontent.com/mongodb/mongo/master/debian/mongod.service -O /lib/systemd/system/mongod.service && chmod +x /lib/systemd/system/mongod.service && \
+wget https://raw.githubusercontent.com/mongodb/mongo/master/debian/init.d -O /etc/init.d/mongod && chmod +x /etc/init.d/mongod
+
+#auto start nginx, php7, mysql, mongodb, sshd
 ENTRYPOINT \
 service nginx start && \
 service php7.0-fpm start && \
 service mysql restart && \
-mongod --fork --logpath /var/log/mongodb.log && \
+service mongod start && \
 /usr/sbin/sshd -D && \
 /bin/bash
 
-RUN export LC_ALL="en_US.UTF-8"
+#mount folder: nginx config, nginx html, www, log
+VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html","/var/www","/var/lib/mongodb"]
 
-EXPOSE 80 8000 22 3306 27017 28017
+EXPOSE 80 8000 22 3306 27017

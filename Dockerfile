@@ -38,7 +38,8 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mysql-server;
 #run and set mysql user
 RUN service mysql restart && mysql -u root -e "CREATE USER 'wild'@'%' IDENTIFIED BY '123456'" && \
 mysql -u root -e "GRANT ALL ON mysql.* TO 'wild'@'%'" && \
-mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'";
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'" && \
+sed -i 's/bind-address[ \t]*= 127.0.0.1/bind-address = 0.0.0.0/g' /etc/mysql/mysql.conf.d/mysqld.cnf
 
 #install nodejs 7.4.0, npm 4.0.5
 RUN curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash - && \
@@ -77,3 +78,6 @@ service mongod start && \
 VOLUME ["/etc/nginx/sites-enabled","/usr/share/nginx/html","/var/www","/var/lib/mongodb"]
 
 EXPOSE 80 8000 22 3306 27017
+
+WORKDIR /usr/share/nginx/html/
+
